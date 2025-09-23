@@ -1,0 +1,7 @@
+*.exe
+*.exe~
+pkg/
+bin/
+.DS_Store
+
+*.log
