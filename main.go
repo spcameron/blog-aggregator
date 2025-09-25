@@ -3,13 +3,17 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
+	_ "github.com/lib/pq"
 	"github.com/spcameron/blog-aggregator/internal/config"
+	"github.com/spcameron/blog-aggregator/internal/database"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -19,13 +23,24 @@ func main() {
 		log.Fatalf("Read() error: %v", err)
 	}
 
+	dbURL := cfg.URL
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Failed to open database connection, %v", err)
+	}
+	defer db.Close()
+	dbQueries := database.New(db)
+
 	programState := &state{
+		db:  dbQueries,
 		cfg: &cfg,
 	}
 	cmds := commands{
 		registeredCommands: map[string]func(*state, command) error{},
 	}
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("Too few arguments passed, require at least two, but received %d", len(os.Args))
