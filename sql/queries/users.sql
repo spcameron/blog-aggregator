@@ -12,3 +12,12 @@ FROM
 WHERE
     name = $1;
 
+-- name: GetUsers :many
+SELECT
+    *
+FROM
+    USERS;
+
+-- name: ResetUsers :exec
+DELETE FROM users;
+

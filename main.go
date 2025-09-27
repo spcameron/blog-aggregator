@@ -41,6 +41,8 @@ func main() {
 	}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerListUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("Too few arguments passed, require at least two, but received %d", len(os.Args))

@@ -68,3 +68,20 @@ func handlerRegister(s *state, cmd command) error {
 	log.Printf("user created: %s (%s)", user.Name, user.ID)
 	return nil
 }
+
+func handlerListUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("get users: %w", err)
+	}
+
+	for _, user := range users {
+		var currentTag string
+		if s.cfg.CurrentUserName == user.Name {
+			currentTag = " (current)"
+		}
+		fmt.Printf("* %s%s\n", user.Name, currentTag)
+	}
+
+	return nil
+}
