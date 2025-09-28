@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -65,7 +64,9 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("set user: %w", err)
 	}
 
-	log.Printf("user created: %s (%s)", user.Name, user.ID)
+	fmt.Println("User created successfully:")
+	printUser(user)
+	fmt.Println()
 	return nil
 }
 
@@ -84,4 +85,11 @@ func handlerListUsers(s *state, cmd command) error {
 	}
 
 	return nil
+}
+
+func printUser(user database.User) {
+	fmt.Printf("* ID:         %s\n", user.ID)
+	fmt.Printf("* Created:    %v\n", user.CreatedAt)
+	fmt.Printf("* Updated:    %v\n", user.UpdatedAt)
+	fmt.Printf("* Name:       %s\n", user.Name)
 }
