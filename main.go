@@ -43,6 +43,8 @@ func main() {
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerListUsers)
+	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("Too few arguments passed, require at least two, but received %d", len(os.Args))
