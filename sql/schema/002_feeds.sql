@@ -1,4 +1,4 @@
--- sql/schema/001_feeds.sql
+-- sql/schema/002_feeds.sql
 -- +goose Up
 CREATE TABLE feeds (
     id uuid PRIMARY KEY,
