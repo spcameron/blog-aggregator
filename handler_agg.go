@@ -4,10 +4,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/spcameron/blog-aggregator/internal/database"
 	"github.com/spcameron/blog-aggregator/rss"
 )
@@ -46,39 +49,74 @@ func scrapeFeeds(s *state) error {
 }
 
 func scrapeFeed(db *database.Queries, feed database.Feed) error {
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	feedData, err := rss.FetchFeed(ctx, feed.Url)
+	if err != nil {
+		return fmt.Errorf("rss fetch feed: %w", err)
+	}
+
 	if err := db.MarkFeedFetched(
-		context.Background(),
+		ctx,
 		database.MarkFeedFetchedParams{
 			ID:        feed.ID,
-			UpdatedAt: time.Now().UTC(),
+			UpdatedAt: now,
 		},
 	); err != nil {
 		return fmt.Errorf("mark feed fetched: %w", err)
 	}
 
-	feedData, err := rss.FetchFeed(context.Background(), feed.Url)
-	if err != nil {
-		return fmt.Errorf("rss fetch feed: %w", err)
+	skipped := 0
+	for _, item := range feedData.Channel.Item {
+
+		if _, err := db.CreatePost(
+			ctx,
+			database.CreatePostParams{
+				ID:        uuid.New(),
+				CreatedAt: now,
+				UpdatedAt: now,
+				Title:     item.Title,
+				Url:       item.Link,
+				Description: sql.NullString{
+					String: item.Description,
+					Valid:  item.Description != "",
+				},
+				PublishedAt: parsePubDate(item.PubDate),
+				FeedID:      feed.ID,
+			},
+		); err != nil {
+			if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+				skipped += 1
+			} else {
+				log.Println(err)
+			}
+		}
 	}
 
-	if len(feedData.Channel.Item) == 0 {
-		log.Printf("Feed %s has no new posts since last fetch", feed.Name)
-		return nil
-	}
-
-	printFeedTitles(feedData)
-	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
+	log.Printf("%v posts skipped because of duplicate URLs", skipped)
 	return nil
 }
 
-func printFeedTitles(feed *rss.RSSFeed) {
-	items := feed.Channel.Item
-
-	if len(items) == 0 {
-		fmt.Println("There are no items to print in this feed.")
+func parsePubDate(s string) time.Time {
+	if s == "" {
+		return time.Now().UTC()
 	}
 
-	for _, item := range items {
-		fmt.Printf("New post: %s\n", item.Title)
+	layouts := []string{
+		time.RFC1123Z,
+		time.RFC1123,
+		time.RFC822Z,
+		time.RFC822,
+		time.RFC3339,
+		time.RFC3339Nano,
 	}
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.UTC()
+		}
+	}
+
+	return time.Now().UTC()
 }
