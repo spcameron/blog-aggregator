@@ -51,9 +51,7 @@ Create a JSON config file at **`~/.gatorconfig.json`**:
 
 ## Database Setup
 
-Goose migration tooling is provided:
-
-Apply the schema in order (from the repo root):
+Goose migration tooling is provided, or apply the schema in order (from the repo root):
 
 ```bash
 psql "$DB_URL" -f sql/schema/001_users.sql
