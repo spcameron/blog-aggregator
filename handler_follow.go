@@ -11,18 +11,13 @@ import (
 	"github.com/spcameron/blog-aggregator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("%d args passed, but `follow` expects one argument, the URL", len(cmd.Args))
 	}
 
 	ctx := context.Background()
 	url := cmd.Args[0]
-
-	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("get user: %w", err)
-	}
 
 	feed, err := s.db.GetFeedByURL(ctx, url)
 	if err != nil {
@@ -50,15 +45,8 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerListFeedFollows(s *state, cmd command) error {
-	ctx := context.Background()
-
-	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("get user: %w", err)
-	}
-
-	follows, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
+func handlerListFeedFollows(s *state, cmd command, user database.User) error {
+	follows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return fmt.Errorf("get feed follows: %w", err)
 	}
